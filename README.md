@@ -1,4 +1,4 @@
-# KnowYourArmorPatcher
+# FoodRemover
 Skyrim Mutagen Patcher that iterates through all placed food objects in a cell and randomly disables them based on location type. Default is to disable all food from dungeons/ruins/crypt/etc. 25% of food objects from Shops/Inns and Farms. 35% of food objects from Dwellings/Temples/Habitations/etc. 75% of food objects from Military Camps/Forts/Bandit Camps/Forsworn/Warlock Caves/etc and 15% of food objects from Wealthy houses and Palaces. 
 
 ## Settings
