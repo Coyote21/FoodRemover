@@ -1,6 +1,7 @@
 {
   "Nickname": "FoodRemover",
-  "HideByDefault": false,
+  "Visibility": "Visible",
   "OneLineDescription": "",
-  "LongDescription": ""
+  "LongDescription": "",
+  "PreferredAutoVersioning": "Default"
 }
