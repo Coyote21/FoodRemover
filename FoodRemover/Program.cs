@@ -25,6 +25,8 @@ namespace FoodRemover
 
     public class Program
     {
+        private static ModKey falskaarMod = ModKey.FromNameAndExtension("Falskaar.esm");
+
         public static int Main(string[] args)
         {
             return SynthesisPipeline.Instance.Patch<ISkyrimMod, ISkyrimModGetter>(
@@ -52,7 +54,38 @@ namespace FoodRemover
             var chanceDungeon = 100;
 
             var objsDisabled = 0;
-        
+
+            //List of Falskaar Location Keywords and their approriate percentages
+            Dictionary<string, int> fsLocations = new Dictionary<string, int>
+            {
+                { "FSLocTypeBanditCamp", chanceCamp },
+                { "FSLocTypeDungeon", chanceDungeon },
+                { "FSLocTypeGiantCamp", chanceHab },
+                { "FSLocTypeHabitationHasInn", chanceShop },
+                { "FSLocTypeHabitation", chanceHab },
+                { "FSLocTypeDwelling", chanceHab },
+                { "FSLocTypeInn", chanceShop },
+            };
+
+            //List of problematic Locations that need percentages
+            Dictionary<string, int> problemLocationsP = new Dictionary<string, int>
+            {
+                { "GoldenglowEstateLocation", chanceHab },
+                { "DrelasCottageLocation", chanceHab },
+                { "SkyHavenTempleLocation", chanceCamp },
+                { "ShorsWatchtowerLocation", chanceCamp },
+            };
+
+            //List of problematic Locations the should be skipped
+            HashSet<String> problemLocationsS = new HashSet<string>
+            {
+                { "BluePalaceWingLocation" },
+                { "HelgenLocation" },
+                { "TwilightSepulcherLocation" },
+                { "HalloftheVigilantLocation" },
+                { "NightingaleHallLocation" },
+            };
+
             //Read user configs
             string percentFile = state.ExtraSettingsDataPath + @"\percentages.json";
             string skipPluginFile = state.ExtraSettingsDataPath + @"\skipPlugins.json";
@@ -70,13 +103,13 @@ namespace FoodRemover
             {
                 var percentJson = JObject.Parse(File.ReadAllText(percentFile));
 
-                chanceShop = (int)(percentJson["LocTypeShop"] ?? 25);
-                chanceHab = (int)(percentJson["LocTypeHabitation"] ?? 35);
-                chanceWealthy = (int)(percentJson["LocTypeWealthy"] ?? 15);
-                chanceCamp = (int)(percentJson["LocTypeCamps"] ?? 75);
-                chanceDungeon = (int)(percentJson["LocTypeDungeon"] ?? 100);
-                chanceSpecial = (int)(percentJson["LocTypeSpecial"] ?? 80);
-                chanceBase = (int)(percentJson["Base"] ?? 50);
+                chanceShop = (int)(percentJson["LocTypeShop"] ?? chanceShop);
+                chanceHab = (int)(percentJson["LocTypeHabitation"] ?? chanceHab);
+                chanceWealthy = (int)(percentJson["LocTypeWealthy"] ?? chanceWealthy);
+                chanceCamp = (int)(percentJson["LocTypeCamps"] ?? chanceCamp);
+                chanceDungeon = (int)(percentJson["LocTypeDungeon"] ?? chanceDungeon);
+                chanceSpecial = (int)(percentJson["LocTypeSpecial"] ?? chanceSpecial);
+                chanceBase = (int)(percentJson["Base"] ?? chanceBase);
             }
             
             var removalChance = chanceBase;
@@ -203,28 +236,45 @@ namespace FoodRemover
                     // Try to find the parent cell, skip if null or not found
                     if (!placedObjectGetter.TryGetParent<ICellGetter>(out var parentCell)) continue;
 
-                    // Find if parent cell is in list of plugins to skip
+                    // Find if parent cell is in users list of plugins to skip
                     if (skipFiles != null && parentCell.FormKey.ModKey != null && skipFiles.Contains(parentCell.FormKey.ModKey)) continue;
 
                     // Find the cell's location record, skip if null or not found
                     if (!parentCell.Location.TryResolve(state.LinkCache, out var placedObjectLocation)) continue;
 
                     // Find if location is in list of locations to skip
+                    if (placedObjectLocation.EditorID == null || problemLocationsS.Contains(placedObjectLocation.EditorID)) continue;
+                        
+                    // Find if location is in users list of locations to skip
                     if (skipLocations != null && placedObjectLocation.EditorID != null && skipLocations.Contains(placedObjectLocation.EditorID)) continue;
 
                     // Ensure the cell location has keywords, skip if it doesn't
                     if (placedObjectLocation.Keywords == null) continue;
 
+                    //Start deisabling step
+                    //Set the removal chance based on location type keyword
                     var locationKeywords = placedObjectLocation.Keywords;
 
-                    //Set the removal chance based on location type
+                    //Start at base chance
+                    removalChance = chanceBase;
+
                     //Check for special locations first
                     if (specialLocations != null && placedObjectLocation.EditorID != null && specialLocations.Contains(placedObjectLocation.EditorID))
                     {
                         removalChance = chanceSpecial;
                     }
+                    // Check for house with LocTypeWealthy Locations
+                    else if (locationKeywords.Contains(Skyrim.Keyword.LocTypeHouse))
+                    {
+                        removalChance = (locationKeywords.Contains(Skyrim.Keyword.TGWealthyHome) ? chanceWealthy : chanceHab);
+                    }
+                    // Check for Palace Locations
+                    else if (locationKeywords.Contains(Skyrim.Keyword.LocTypeCastle))
+                    {
+                        removalChance = chanceWealthy;
+                    }
                     // Check for LocTypeHab Locations
-                    else if ( locationKeywords.Contains(Skyrim.Keyword.LocTypeDwelling) || locationKeywords.Contains(Skyrim.Keyword.LocTypeHabitation) || locationKeywords.Contains(Skyrim.Keyword.LocTypeTemple) || locationKeywords.Contains(Skyrim.Keyword.LocTypeShip) )
+                    else if ( locationKeywords.Contains(Skyrim.Keyword.LocTypeDwelling) || locationKeywords.Contains(Skyrim.Keyword.LocTypeHabitation) || locationKeywords.Contains(Skyrim.Keyword.LocTypeTemple) || locationKeywords.Contains(Skyrim.Keyword.LocTypeShip) || locationKeywords.Contains(Skyrim.Keyword.LocTypeGiantCamp) || locationKeywords.Contains(Skyrim.Keyword.LocTypeHagravenNest))
                     {
                         removalChance = (placedObjectLocation.EditorID == "KatariahLocation" ? chanceWealthy : chanceHab);
                     }
@@ -239,51 +289,35 @@ namespace FoodRemover
                         removalChance = chanceCamp;
                     }
                     // Check for LocTypeDungeons Locations
-                    else if ( locationKeywords.Contains(Skyrim.Keyword.LocTypeDungeon) || locationKeywords.Contains(Skyrim.Keyword.LocSetCave) || locationKeywords.Contains(Skyrim.Keyword.LocTypeAnimalDen) || locationKeywords.Contains(Skyrim.Keyword.LocSetDwarvenRuin) || locationKeywords.Contains(Skyrim.Keyword.LocTypeDraugrCrypt) || locationKeywords.Contains(Skyrim.Keyword.LocSetNordicRuin) )
+                    else if ( locationKeywords.Contains(Skyrim.Keyword.LocTypeDungeon) || locationKeywords.Contains(Skyrim.Keyword.LocSetCave) || locationKeywords.Contains(Skyrim.Keyword.LocTypeAnimalDen) || locationKeywords.Contains(Skyrim.Keyword.LocSetDwarvenRuin) || locationKeywords.Contains(Skyrim.Keyword.LocTypeDraugrCrypt) || locationKeywords.Contains(Skyrim.Keyword.LocSetNordicRuin) || locationKeywords.Contains(Skyrim.Keyword.LocTypeVampireLair) )
                     {
                         removalChance = chanceDungeon;
                     }
-                    // Check for LocTypeWealthy Locations
-                    else if (locationKeywords.Contains(Skyrim.Keyword.LocTypeHouse))
+                    // Check for problematic locations
+                    else if (placedObjectLocation.EditorID != null && problemLocationsP.TryGetValue(placedObjectLocation.EditorID, out int plChance))
                     {
-                        removalChance = (locationKeywords.Contains(Skyrim.Keyword.TGWealthyHome) ? chanceWealthy : chanceHab);
+                        removalChance = plChance;
                     }
-                    // else use base
-                    else
+                    //Check if Falskaar mod is present and use Falskaar LocTypes if it is
+                    else if (state.LoadOrder.ContainsKey(falskaarMod))
                     {
-                        removalChance = chanceBase;
                         
-                        //Skip cetain problematic locations
-                        if (placedObjectLocation.EditorID == "BluePalaceWingLocation") continue;
-                        if (placedObjectLocation.EditorID == "HelgenLocation") continue;
-                        if (placedObjectLocation.EditorID == "TwilightSepulcherLocation") continue;
-                        if (placedObjectLocation.EditorID == "HalloftheVigilantLocation") continue;
-                        if (placedObjectLocation.EditorID == "NightingaleHallLocation") continue;
-                        
-
-                        //More problematic locations that should not be skipped
-                        if (placedObjectLocation.EditorID == "GoldenglowEstateLocation") removalChance = chanceHab;
-                        if (placedObjectLocation.EditorID == "DrelasCottageLocation") removalChance = chanceHab;
-                        if (placedObjectLocation.EditorID == "SkyHavenTempleLocation") removalChance = chanceCamp;
-                        if (placedObjectLocation.EditorID == "ShorsWatchtowerLocation") removalChance = chanceCamp;
-                        
-                        //Suitable location not yet found
-                        if (removalChance == chanceBase)
+                        //if ( locationKeywords.Contains(""))
+                        // Check for Falskaar locations
+                        foreach (var locType in locationKeywords)
                         {
-                            foreach (var locType in locationKeywords)
+                            
+                                //Falskaar location types
+                            if (!locType.TryResolve(state.LinkCache, out var locTypeRec)) continue;
+                            if (locTypeRec.EditorID == null) continue;
+                            if (fsLocations.TryGetValue(locTypeRec.EditorID, out int fsChance))
                             {
-                                if (locType.TryResolve(state.LinkCache, out var locTypeRec))
-                                {
-                                    //Falskaar location types
-                                    if (locTypeRec.EditorID == "FSLocTypeDungeon") removalChance = chanceDungeon;
-                                    if (locTypeRec.EditorID == "FSLocTypeBanditCamp") removalChance = chanceCamp;
-                                    if (locTypeRec.EditorID == "FSLocTypeHabitation") removalChance = chanceHab;
-                                    if (locTypeRec.EditorID == "FSLocTypeDwelling") removalChance = chanceHab;
-                                    if (locTypeRec.EditorID == "FSLocTypeInn") removalChance = chanceShop;
-                                }
+                                removalChance = fsChance;
+                                System.Console.WriteLine("fsLocationPercentage: " + placedObjectLocation.EditorID + " - " + locTypeRec.EditorID + " - " + removalChance);
+                                break;
                             }
+                            //removalChance = (fsLocations.TryGetValue(locTypeRec.EditorID, out int fsChance) ? fsChance : removalChance);
                         }
-                        
                     }
                         
                     //If RND < removal chance, copy as override into new plugin and set to initially disabled
