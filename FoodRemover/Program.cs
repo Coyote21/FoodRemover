@@ -44,7 +44,7 @@ namespace FoodRemover
 
         public static void RunPatch(SynthesisState<ISkyrimMod, ISkyrimModGetter> state)
         {
-            Random rnd = new Random();
+            //Start step 1. Initialize everything and read any user-config files
             var chanceShop = 25;
             var chanceHab = 35;
             var chanceWealthy = 15;
@@ -91,7 +91,8 @@ namespace FoodRemover
             string skipPluginFile = state.ExtraSettingsDataPath + @"\skipPlugins.json";
             string skipLocationFile = state.ExtraSettingsDataPath + @"\skipLocations.json";
             string specialFile = state.ExtraSettingsDataPath + @"\specialLocations.json";
-            
+            string customFile = state.ExtraSettingsDataPath + @"\customPercentages.json";
+
             //string configFilePath = Path.Combine(state.ExtraSettingsDataPath, "config.json");
 
             if (!File.Exists(percentFile))
@@ -111,18 +112,31 @@ namespace FoodRemover
                 chanceSpecial = (int)(percentJson["LocTypeSpecial"] ?? chanceSpecial);
                 chanceBase = (int)(percentJson["Base"] ?? chanceBase);
             }
-            
-            var removalChance = chanceBase;
 
-            System.Console.WriteLine();
-            System.Console.WriteLine("LocTypeShop: Disabling " + chanceShop + "% of Placed Food Objects");
-            System.Console.WriteLine("LocTypeHabitation: Disabling " + chanceHab + "% of Placed Food Objects");
-            System.Console.WriteLine("LocTypeWealthy: Disabling " + chanceWealthy + "% of Placed Food Objects");
-            System.Console.WriteLine("LocTypeCamps: Disabling " + chanceCamp + "% of Placed Food Objects");
-            System.Console.WriteLine("LocTypeDungeon: Disabling " + chanceDungeon + "% of Placed Food Objects");
-            System.Console.WriteLine("LocTypeSpecial: Disabling " + chanceSpecial + "% of Placed Food Objects");
-            System.Console.WriteLine("Base: Disabling " + chanceBase + "% of Placed Food Objects");
-            System.Console.WriteLine();
+            var customPercent = new JObject();
+            if (!File.Exists(customFile))
+            {
+                Console.WriteLine("\"customPercentages.json\" not located in Users Data folder.");
+            }
+            else
+            {
+                Console.WriteLine("\"customPercentages.json\" located.");
+                customPercent = JObject.Parse(File.ReadAllText(customFile));
+                foreach (var locID in customPercent)
+                {
+                    Console.WriteLine("Custom Location: " + locID.Key + " has percentage " + locID.Value + "%");
+                }
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("LocTypeShop: Disabling " + chanceShop + "% of Placed Food Objects");
+            Console.WriteLine("LocTypeHabitation: Disabling " + chanceHab + "% of Placed Food Objects");
+            Console.WriteLine("LocTypeWealthy: Disabling " + chanceWealthy + "% of Placed Food Objects");
+            Console.WriteLine("LocTypeCamps: Disabling " + chanceCamp + "% of Placed Food Objects");
+            Console.WriteLine("LocTypeDungeon: Disabling " + chanceDungeon + "% of Placed Food Objects");
+            Console.WriteLine("LocTypeSpecial: Disabling " + chanceSpecial + "% of Placed Food Objects");
+            Console.WriteLine("Base: Disabling " + chanceBase + "% of Placed Food Objects");
+            Console.WriteLine();
 
             //Read list of plugins to ignore
             HashSet<ModKey>? skipFiles = null;
@@ -139,20 +153,20 @@ namespace FoodRemover
 
                 if (skipFiles == null || skipFiles.Count == 0)
                 {
-                    System.Console.WriteLine("'skipPlugins.json' must contain a single array of strings of plugin names");
-                    System.Console.WriteLine("For example");
-                    System.Console.WriteLine("[\"plugin1.esp\", \"plugin2.esp\", \"plugin3.esm\"]");
+                    Console.WriteLine("'skipPlugins.json' must contain a single array of strings of plugin names");
+                    Console.WriteLine("For example");
+                    Console.WriteLine("[\"plugin1.esp\", \"plugin2.esp\", \"plugin3.esm\"]");
                 }
                 else
                 {
-                    System.Console.WriteLine("Not searching for Objects in the following plugins:");
+                    Console.WriteLine("Not searching for Objects in the following plugins:");
                     foreach (var plugin in skipFiles)
                     {
-                        System.Console.WriteLine(plugin);
+                        Console.WriteLine(plugin);
                     }
                 }     
             }
-            System.Console.WriteLine();
+            Console.WriteLine();
 
             //Read list of Locations to ignore
             HashSet<String>? skipLocations = null;
@@ -169,21 +183,21 @@ namespace FoodRemover
 
                 if (skipLocations == null || skipLocations.Count == 0)
                 {
-                    System.Console.WriteLine("'skipLocations.json' must contain a single array of strings of Location EditorID's");
-                    System.Console.WriteLine("These can be found using xEdit or a similar tool");
-                    System.Console.WriteLine("For example");
-                    System.Console.WriteLine("[\"ScaryCaveLocation\", \"BanditTowerLocation\", \"ProblematicPluginLocation\"]");
+                    Console.WriteLine("'skipLocations.json' must contain a single array of strings of Location EditorID's");
+                    Console.WriteLine("These can be found using xEdit or a similar tool");
+                    Console.WriteLine("For example");
+                    Console.WriteLine("[\"ScaryCaveLocation\", \"BanditTowerLocation\", \"ProblematicPluginLocation\"]");
                 }
                 else
                 {
-                    System.Console.WriteLine("Not searching for Objects in the following Locations:");
+                    Console.WriteLine("Not searching for Objects in the following Locations:");
                     foreach (var loc in skipLocations)
                     {
-                        System.Console.WriteLine(loc);
+                        Console.WriteLine(loc);
                     }
                 }
             }
-            System.Console.WriteLine();
+            Console.WriteLine();
 
             //Read list of Special Locations
             HashSet<String>? specialLocations = null;
@@ -200,25 +214,25 @@ namespace FoodRemover
 
                 if (specialLocations == null || specialLocations.Count == 0)
                 {
-                    System.Console.WriteLine("'specialLocations.json' must contain a single array of strings of Location EditorID's");
-                    System.Console.WriteLine("These can be found using xEdit or a similar tool");
-                    System.Console.WriteLine("For example");
-                    System.Console.WriteLine("[\"ScaryCaveLocation\", \"BanditTowerLocation\", \"ProblematicPluginLocation\"]");
-                    System.Console.WriteLine("These locations will have Placed Food Objects Disabled using the LocTypeSpecial percentage listed above");
+                    Console.WriteLine("'specialLocations.json' must contain a single array of strings of Location EditorID's");
+                    Console.WriteLine("These can be found using xEdit or a similar tool");
+                    Console.WriteLine("For example");
+                    Console.WriteLine("[\"ScaryCaveLocation\", \"BanditTowerLocation\", \"ProblematicPluginLocation\"]");
+                    Console.WriteLine("These locations will have Placed Food Objects Disabled using the LocTypeSpecial percentage listed above");
                 }
                 else
                 {
-                    System.Console.WriteLine("Using the following Special Locations:");
+                    Console.WriteLine("Using the following Special Locations:");
                     foreach (var loc in specialLocations)
                     {
-                        System.Console.WriteLine(loc);
+                        Console.WriteLine(loc);
                     }
                 }
             }
-            System.Console.WriteLine();
+            Console.WriteLine();
 
 
-            //Start Placed Object Iteration
+            // Start step 2. Start Placed Object Iteration
             foreach (var placedObjectGetter in state.LoadOrder.PriorityOrder.PlacedObject().WinningContextOverrides(state.LinkCache))
             {
                 //If already disabled, skip
@@ -245,20 +259,27 @@ namespace FoodRemover
                     // Find if location is in list of locations to skip
                     if (placedObjectLocation.EditorID == null || problemLocationsS.Contains(placedObjectLocation.EditorID)) continue;
                         
-                    // Find if location is in users list of locations to skip
+                    // Check if location is in users list of locations to skip
                     if (skipLocations != null && placedObjectLocation.EditorID != null && skipLocations.Contains(placedObjectLocation.EditorID)) continue;
 
                     // Ensure the cell location has keywords, skip if it doesn't
                     if (placedObjectLocation.Keywords == null) continue;
 
-                    //Start deisabling step
+                    //Start disabling step
                     //Set the removal chance based on location type keyword
                     var locationKeywords = placedObjectLocation.Keywords;
 
                     //Start at base chance
-                    removalChance = chanceBase;
+                    int removalChance = chanceBase;
 
-                    //Check for special locations first
+                    // Check if location is in users custom list of percentages
+                    if (placedObjectLocation.EditorID != null && customPercent != null && customPercent.ContainsKey(placedObjectLocation.EditorID))
+                    {
+                        removalChance = (int)customPercent[placedObjectLocation.EditorID]!;
+                        Console.WriteLine("CustomLoc: " + placedObjectLocation.EditorID + " using " + removalChance + "%");
+                    }
+                    else
+                    // Check for special locations
                     if (specialLocations != null && placedObjectLocation.EditorID != null && specialLocations.Contains(placedObjectLocation.EditorID))
                     {
                         removalChance = chanceSpecial;
@@ -298,11 +319,9 @@ namespace FoodRemover
                     {
                         removalChance = plChance;
                     }
-                    //Check if Falskaar mod is present and use Falskaar LocTypes if it is
+                    // Check if Falskaar mod is present and use Falskaar LocTypes if it is
                     else if (state.LoadOrder.ContainsKey(falskaarMod))
                     {
-                        
-                        //if ( locationKeywords.Contains(""))
                         // Check for Falskaar locations
                         foreach (var locType in locationKeywords)
                         {
@@ -313,14 +332,13 @@ namespace FoodRemover
                             if (fsLocations.TryGetValue(locTypeRec.EditorID, out int fsChance))
                             {
                                 removalChance = fsChance;
-                                System.Console.WriteLine("fsLocationPercentage: " + placedObjectLocation.EditorID + " - " + locTypeRec.EditorID + " - " + removalChance);
                                 break;
                             }
-                            //removalChance = (fsLocations.TryGetValue(locTypeRec.EditorID, out int fsChance) ? fsChance : removalChance);
                         }
                     }
-                        
+                    //Start step 3. Disable/Remove the placed food object       
                     //If RND < removal chance, copy as override into new plugin and set to initially disabled
+                    Random rnd = new Random();
                     if (rnd.Next(100) < removalChance)
                     {
                         IPlacedObject modifiedObject = placedObjectGetter.GetOrAddAsOverride(state.PatchMod);
@@ -329,7 +347,7 @@ namespace FoodRemover
                     }
                 }
             }
-            System.Console.WriteLine(objsDisabled + " Placed Food Objects Disabled");
+            Console.WriteLine(objsDisabled + " Placed Food Objects Disabled");
         }
     }
 }

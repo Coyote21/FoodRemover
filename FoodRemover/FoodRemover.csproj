@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp3.1</TargetFramework>
@@ -7,12 +7,12 @@
 
     <ItemGroup>
         <PackageReference Include="AlphaFS" Version="2.2.6" />
-        <PackageReference Include="Mutagen.Bethesda" Version="0.21.0" />
+        <PackageReference Include="Mutagen.Bethesda" Version="0.21.2" />
         <PackageReference Include="Mutagen.Bethesda.FormKeys.SkyrimSE" Version="1.0.0" />
-        <PackageReference Include="Mutagen.Bethesda.Skyrim" Version="0.21.0" />
-        <PackageReference Include="Mutagen.Bethesda.Synthesis" Version="0.10.17" />
+        <PackageReference Include="Mutagen.Bethesda.Skyrim" Version="0.21.2" />
+        <PackageReference Include="Mutagen.Bethesda.Synthesis" Version="0.10.18" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-        <PackageReference Include="Noggog.CSharpExt" Version="1.6.5" />
+        <PackageReference Include="Noggog.CSharpExt" Version="1.6.6" />
     </ItemGroup>
 
 </Project>
