@@ -242,7 +242,7 @@ namespace FoodRemover
                 if (placedObject.EditorID == null)
                 {
                     // Try to find the base object record, skip if null or not found
-                    if (!state.LinkCache.TryLookup<IIngestibleGetter>(placedObjectGetter.Record.Base.FormKey ?? FormKey.Null, out var placedObjectBase)) continue;
+                    if (!placedObjectGetter.Record.Base.TryResolve<IIngestibleGetter>(state.LinkCache, out var placedObjectBase)) continue;
 
                     // Check if it's EDID contains "Food", skip if EDID null or does not contain "Food"
                     if (placedObjectBase.EditorID == null || !placedObjectBase.EditorID.ContainsInsensitive("Food")) continue;
