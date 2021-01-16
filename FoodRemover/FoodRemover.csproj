@@ -6,13 +6,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AlphaFS" Version="2.2.6" />
-        <PackageReference Include="Mutagen.Bethesda" Version="0.22.1" />
         <PackageReference Include="Mutagen.Bethesda.FormKeys.SkyrimSE" Version="1.0.0" />
-        <PackageReference Include="Mutagen.Bethesda.Skyrim" Version="0.22.1" />
-        <PackageReference Include="Mutagen.Bethesda.Synthesis" Version="0.12.1" />
+        <PackageReference Include="Mutagen.Bethesda.Synthesis" Version="0.13.1" />
         <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-        <PackageReference Include="Noggog.CSharpExt" Version="1.6.7" />
     </ItemGroup>
 
 </Project>
