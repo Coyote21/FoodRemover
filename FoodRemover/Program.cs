@@ -10,8 +10,7 @@ using Noggog;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using System.IO;
-
-
+using System.Threading.Tasks;
 
 namespace FoodRemover
 {
@@ -27,22 +26,15 @@ namespace FoodRemover
     {
         private static ModKey falskaarMod = ModKey.FromNameAndExtension("Falskaar.esm");
 
-        public static int Main(string[] args)
+        public static Task<int> Main(string[] args)
         {
-            return SynthesisPipeline.Instance.Patch<ISkyrimMod, ISkyrimModGetter>(
-                args: args,
-                patcher: RunPatch,
-                userPreferences: new UserPreferences()
-                {
-                    ActionsForEmptyArgs = new RunDefaultPatcher()
-                    {
-                        IdentifyingModKey = "FoodRemover.esp",
-                        TargetRelease = GameRelease.SkyrimSE
-                    }
-                });
+            return SynthesisPipeline.Instance
+                .SetTypicalOpen(GameRelease.SkyrimSE, "FoodRemover.esp")
+                .AddPatch<ISkyrimMod, ISkyrimModGetter>(RunPatch)
+                .Run(args);
         }
 
-        public static void RunPatch(SynthesisState<ISkyrimMod, ISkyrimModGetter> state)
+        public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
             //Start step 1. Initialize everything and read any user-config files
             var chanceShop = 25;
