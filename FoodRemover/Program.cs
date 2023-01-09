@@ -229,7 +229,10 @@ namespace FoodRemover
             {
                 //If already disabled, skip
                 if (placedObjectGetter.Record.MajorRecordFlagsRaw == 0x0000_0800) continue;
-               
+
+                //If already owned by someone other than the player, skip (Thank you Glanzer-modder for this)
+                if (placedObjectGetter.Record.Ownership != null) continue;
+
                 var placedObject = placedObjectGetter.Record;
                 if (placedObject.EditorID == null)
                 {
